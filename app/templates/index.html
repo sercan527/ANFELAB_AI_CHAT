@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANFE LAB | SmartLead AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>ANFE LAB</h2>
+        <p>3D Baskı, Dijital Üretim & Yazılım Çözümleri Asistanı</p>
+    </div>
+
+
+    <div class="chat-box" id="chatBox">
+        <div class="message ai-message">Merhaba! Ben ANFE LAB yapay zekâ asistanıyım. Çok renkli 3D baskı, prototipleme veya yazılım projeleriniz hakkında size nasıl yardımcı olabilirim?</div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="Mesajınızı yazın..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Gönder</button>
+    </div>
+
+
+    <div class="lead-form">
+        <h3 style="margin-top: 0; color: #545454; font-size: 16px;">Projeniz İçin Teklif / İletişim Formu</h3>
+        <div class="form-group">
+            <input type="text" id="leadName" placeholder="Adınız Soyadınız">
+        </div>
+        <div class="form-group">
+            <input type="text" id="leadPhone" placeholder="Telefon Numaranız">
+        </div>
+        <div class="form-group">
+            <textarea id="leadMessage" placeholder="Proje Detayınız / Talebiniz" rows="3"></textarea>
+        </div>
+        <button onclick="submitLead()" style="width: 100%; background: #ffa506;">Talebi Gönder</button>
+        <p id="leadStatus" style="margin-top: 10px; font-size: 13px; text-align: center;"></p>
+    </div>
+</div>
+
+<script>
+    let sohbetGecmisi = [];
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const chatBox = document.getElementById('chatBox');
+        const mesaj = input.value.trim();
+
+        if (!mesaj) return;
+
+        chatBox.innerHTML += `<div class="message user-message">${mesaj}</div>`;
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch('/api/sohbet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mesaj: mesaj, gecmis: sohbetGecmisi })
+            });
+            const data = await response.json();
+
+            if (data.yanit) {
+                chatBox.innerHTML += `<div class="message ai-message">${data.yanit}</div>`;
+                sohbetGecmisi.push({ role: 'user', content: mesaj });
+                sohbetGecmisi.push({ role: 'assistant', content: data.yanit });
+            } else {
+                chatBox.innerHTML += `<div class="message ai-message">Hata: Yanıt alınamadı.</div>`;
+            }
+        } catch (err) {
+            chatBox.innerHTML += `<div class="message ai-message">Bağlantı hatası oluştu.</div>`;
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
+
+    async function submitLead() {
+        const isim = document.getElementById('leadName').value.trim();
+        const telefon = document.getElementById('leadPhone').value.trim();
+        const mesaj = document.getElementById('leadMessage').value.trim();
+        const status = document.getElementById('leadStatus');
+
+        if (!isim || !telefon) {
+            status.style.color = '#ef4444';
+            status.innerText = 'Lütfen isim ve telefon alanlarını doldurun.';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isim, telefon, mesaj })
+            });
+            const data = await response.json();
+
+            if (response.status === 201) {
+                status.style.color = '#10b981';
+                status.innerText = 'Talebiniz başarıyla alındı. ANFE LAB ekibi sizinle iletişime geçecektir.';
+                document.getElementById('leadName').value = '';
+                document.getElementById('leadPhone').value = '';
+                document.getElementById('leadMessage').value = '';
+            } else {
+                status.style.color = '#ef4444';
+                status.innerText = data.hata || 'Kayıt oluşturulamadı.';
+            }
+        } catch (err) {
+            status.style.color = '#ef4444';
+            status.innerText = 'Sunucu bağlantı hatası.';
+        }
+    }
+</script>
+</body>
+</html>

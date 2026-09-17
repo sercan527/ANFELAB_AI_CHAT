@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANFE LAB | Yönetim Paneli</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>ANFE LAB — Form DÖNÜŞ</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>İsim</th>
+                <th>Telefon</th>
+                <th>Proje / Mesaj</th>
+                <th>Tarih</th>
+            </tr>
+        </thead>
+        <tbody id="leadsTableBody">
+            <tr><td colspan="5" style="text-align: center; padding: 20px;">Yükleniyor...</td></tr>
+        </tbody>
+    </table>
+</div>
+<script>
+    async function fetchLeads() {
+        const tableBody = document.getElementById('leadsTableBody');
+        try {
+            const response = await fetch('/api/leads');
+            const data = await response.json();
+
+            if (data.leads && data.leads.length > 0) {
+                tableBody.innerHTML = '';
+                data.leads.forEach(lead => {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>#${lead.id}</td>
+                            <td style="color: #ffa506;"><strong>${lead.isim}</strong></td>
+                            <td>${lead.telefon}</td>
+                            <td>${lead.mesaj || '-'}</td>
+                            <td>${lead.tarih}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Henüz kayıtlı müşteri adayı yok.</td></tr>';
+            }
+        } catch (err) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="error-message">Kayıtlar yüklenirken hata oluştu.</td></tr>';
+        }
+    }
+    fetchLeads();
+</script>
+
+</body>
+</html>
