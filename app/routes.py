@@ -1,26 +1,47 @@
 from flask import Blueprint, request, jsonify, render_template
-from app.database import lead_ekle, tum_leadler
+# DİKKAT: get_db ve ziyaretci_sayisini_artir fonksiyonlarını veritabanından içeri aktardık.
+from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir
 from app.services.ai_service import ai_yanit_uret
-from app.database import lead_ekle, tum_leadler, ziyaretci_sayisini_artir
+
 main_bp = Blueprint('main', __name__)
 
-# --- YENİ EKLENEN KISIM: Ziyaretçi Sayacı Değişkeni ---
-toplam_ziyaretci = 0
 
+# 1. HER SAYFA AÇILDIĞINDA SAYACI ARTIRAN APİ (masterPage.js tetikleyecek)
 @main_bp.route('/api/ziyaret', methods=['GET'])
 def ziyaret_sayaci():
-    global toplam_ziyaretci
-    toplam_ziyaretci += 1
-    return jsonify({"ziyaretci_sayisi": toplam_ziyaretci}), 200
-# --------------------------------------------------------
+    try:
+        # Bu fonksiyon database.py içinden çağrılıp sayıyı DB'de 1 artırır
+        guncel_sayi = ziyaretci_sayisini_artir()
+        return jsonify({"ziyaretci_sayisi": guncel_sayi}), 200
+    except Exception as e:
+        return jsonify({"hata": f"Sayaç artırma hatası: {str(e)}"}), 500
+
+
+# 2. SADECE SAYIYI OKUYAN APİ (Wix Yönetim Paneli tetikleyecek)
+@main_bp.route('/api/istatistik', methods=['GET'])
+def istatistik_getir():
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT ziyaret_sayisi FROM istatistikler WHERE id = 1')
+        row = cursor.fetchone()
+        
+        # Eğer tablo boşsa 0 döndür
+        sayi = row['ziyaret_sayisi'] if row else 0
+        return jsonify({"ziyaretci_sayisi": sayi}), 200
+    except Exception as e:
+        return jsonify({"hata": f"İstatistik okuma hatası: {str(e)}"}), 500
+
 
 @main_bp.route('/')
 def index():
     return render_template('index.html')
 
+
 @main_bp.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
+
 
 @main_bp.route('/health', methods=['GET'])
 def health_check():
@@ -28,6 +49,7 @@ def health_check():
         "durum": "saglikli",
         "sistem": "ANFE LAB SmartLead AI"
     }), 200
+
 
 @main_bp.route('/api/sohbet', methods=['POST'])
 def sohbet_api():
@@ -44,6 +66,7 @@ def sohbet_api():
         
     except Exception as e:
         return jsonify({"hata": f"Sunucu hatası: {str(e)}"}), 500
+
 
 @main_bp.route('/api/leads', methods=['GET', 'POST'])
 def leads_api():
