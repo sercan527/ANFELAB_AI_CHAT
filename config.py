@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 load_dotenv() 
  
 class Config: 
-    """Uygulama temel yapılandırma sınıfı"""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'varsayilan-gizli-anahtar')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
     AI_PROVIDER = os.environ.get('AI_PROVIDER', 'groq')
