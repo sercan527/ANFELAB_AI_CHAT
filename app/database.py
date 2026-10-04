@@ -11,13 +11,11 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
-
 def close_db(e=None):
     """Her istek sonunda veritabanı bağlantısını kapatır."""
     db = g.pop('db', None)
     if db is not None:
         db.close()
-
 
 def init_db(app):
     with app.app_context():
@@ -34,11 +32,22 @@ def init_db(app):
             )
         ''')
         
-        # Ziyaretçi Sayacı Tablosu (YENİ EKLENDİ)
+        # Ziyaretçi Sayacı Tablosu
         db.execute('''
             CREATE TABLE IF NOT EXISTS istatistikler (
                 id INTEGER PRIMARY KEY,
                 ziyaret_sayisi INTEGER DEFAULT 0
+            )
+        ''')
+        
+        # Kullanıcılar Tablosu (YENİ EKLENDİ)
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS kullanicilar (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                kullanici_adi TEXT NOT NULL,
+                sifre TEXT NOT NULL,
+                email TEXT,
+                tarih TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
@@ -51,6 +60,7 @@ def init_db(app):
             
         db.commit()
 
+# --- MEVCUT YARDIMCI FONKSİYONLAR ---
 
 def lead_ekle(isim, telefon, mesaj=""):
     db = get_db()
@@ -61,7 +71,6 @@ def lead_ekle(isim, telefon, mesaj=""):
     )
     db.commit()
     return cursor.lastrowid
-
 
 def tum_leadler():
     db = get_db()
@@ -93,3 +102,16 @@ def ziyaretci_sayisini_artir():
     row = cursor.fetchone()
     
     return row['ziyaret_sayisi']
+
+# --- YENİ EKLENEN KULLANICI FONKSİYONU ---
+
+def kullanici_ekle_db(kullanici_adi, sifre, email=""):
+    """Veritabanına yeni bir kullanıcı ekler."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute(
+        'INSERT INTO kullanicilar (kullanici_adi, sifre, email) VALUES (?, ?, ?)',
+        (kullanici_adi, sifre, email)
+    )
+    db.commit()
+    return cursor.lastrowid

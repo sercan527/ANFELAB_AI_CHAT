@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
-# DİKKAT: get_db ve ziyaretci_sayisini_artir fonksiyonlarını veritabanından içeri aktardık.
+
 from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir
 from app.services.ai_service import ai_yanit_uret
 
@@ -93,3 +93,28 @@ def leads_api():
             
     except Exception as e:
         return jsonify({"hata": f"Veritabanı/Sunucu hatası: {str(e)}"}), 500
+
+
+@app.route('/api/kullanici_ekle', methods=['POST'])
+def kullanici_ekle():
+    try:
+        data = request.json
+        k_adi = data.get('kullanici_adi')
+        sifre = data.get('sifre')
+        email = data.get('email', '') 
+
+        if not k_adi or not sifre:
+            return jsonify({"hata": "Kullanıcı adı ve şifre zorunludur"}), 400
+
+        # Mevcut app.db'ye bağlan ve kaydet
+        conn = sqlite3.connect('app.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO kullanicilar (kullanici_adi, sifre, email) VALUES (?, ?, ?)", 
+                  (k_adi, sifre, email))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"mesaj": "Kullanıcı başarıyla kaydedildi!"}), 201
+
+    except Exception as e:
+        return jsonify({"hata": f"Kayıt hatası: {str(e)}"}), 500
