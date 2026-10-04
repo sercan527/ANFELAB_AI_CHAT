@@ -115,3 +115,20 @@ def kullanici_ekle_db(kullanici_adi, sifre, email=""):
     )
     db.commit()
     return cursor.lastrowid
+
+def tum_kullanicilar():
+    db = get_db()
+    cursor = db.cursor()
+    # Şifreyi çekmiyoruz, sadece id, ad, mail ve tarih alıyoruz
+    cursor.execute('SELECT id, kullanici_adi, email, tarih FROM kullanicilar ORDER BY tarih DESC')
+    rows = cursor.fetchall()
+    
+    result = []
+    for row in rows:
+        result.append({
+            'id': row['id'],
+            'kullanici_adi': row['kullanici_adi'],
+            'email': row['email'],
+            'tarih': str(row['tarih'])
+        })
+    return result
