@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template
 
-from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir
+from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir, kullanici_ekle_db
 from app.services.ai_service import ai_yanit_uret
 
 main_bp = Blueprint('main', __name__)
