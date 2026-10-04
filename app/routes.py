@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template
 
-from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir, kullanici_ekle_db
+# tum_kullanicilar import listesine eklendi
+from app.database import lead_ekle, tum_leadler, get_db, ziyaretci_sayisini_artir, kullanici_ekle_db, tum_kullanicilar
 from app.services.ai_service import ai_yanit_uret
 
 main_bp = Blueprint('main', __name__)
@@ -94,7 +95,6 @@ def leads_api():
     except Exception as e:
         return jsonify({"hata": f"Veritabanı/Sunucu hatası: {str(e)}"}), 500
 
- 
 
 @main_bp.route('/api/kullanici_ekle', methods=['POST'])
 def kullanici_ekle():
@@ -114,3 +114,39 @@ def kullanici_ekle():
 
     except Exception as e:
         return jsonify({"hata": f"Kayıt hatası: {str(e)}"}), 500
+
+
+# --- YENİ EKLENEN: GİRİŞ (LOGIN) API'Sİ ---
+@main_bp.route('/api/giris', methods=['POST'])
+def kullanici_giris():
+    try:
+        data = request.json
+        k_adi = data.get('kullanici_adi')
+        sifre = data.get('sifre')
+
+        if not k_adi or not sifre:
+            return jsonify({"hata": "Kullanıcı adı ve şifre zorunludur"}), 400
+
+        # Veritabanında kullanıcıyı ara
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM kullanicilar WHERE kullanici_adi = ? AND sifre = ?', (k_adi, sifre))
+        kullanici = cursor.fetchone()
+
+        if kullanici:
+            return jsonify({"durum": "basarili", "mesaj": "Giriş onaylandı"}), 200
+        else:
+            return jsonify({"hata": "Kullanıcı adı veya şifre hatalı!"}), 401
+
+    except Exception as e:
+        return jsonify({"hata": f"Sunucu hatası: {str(e)}"}), 500
+
+
+# --- YENİ EKLENEN: KULLANICILARI LİSTELEME API'Sİ (Wix 2. Tablo İçin) ---
+@main_bp.route('/api/kullanicilar', methods=['GET'])
+def kullanicilar_getir():
+    try:
+        kayitlar = tum_kullanicilar()
+        return jsonify({"kullanicilar": kayitlar}), 200
+    except Exception as e:
+        return jsonify({"hata": f"Kullanıcı verileri okunamadı: {str(e)}"}), 500
