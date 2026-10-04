@@ -121,13 +121,12 @@ def kullanici_ekle():
 def kullanici_giris():
     try:
         data = request.json
-        k_adi = data.get('kullanici_adi')
+        k_adi = data.get('email')
         sifre = data.get('sifre')
 
         if not k_adi or not sifre:
             return jsonify({"hata": "Kullanıcı adı ve şifre zorunludur"}), 400
 
-        # Veritabanında kullanıcıyı ara
         db = get_db()
         cursor = db.cursor()
         cursor.execute('SELECT * FROM kullanicilar WHERE kullanici_adi = ? AND sifre = ?', (k_adi, sifre))
