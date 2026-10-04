@@ -116,30 +116,35 @@ def kullanici_ekle():
         return jsonify({"hata": f"Kayıt hatası: {str(e)}"}), 500
 
 
-# --- YENİ EKLENEN: GİRİŞ (LOGIN) API'Sİ ---
+# --- GÜNCELLENEN: GİRİŞ (LOGIN) API'Sİ (Hem Mail Hem Kullanıcı Adı İle Giriş) ---
 @main_bp.route('/api/giris', methods=['POST'])
 def kullanici_giris():
     try:
         data = request.json
-        k_adi = data.get('email')
+        # Frontend'den 'email' anahtarıyla geliyor ama içinde isim de olabilir mail de
+        giris_bilgisi = data.get('email') 
         sifre = data.get('sifre')
 
-        if not k_adi or not sifre:
-            return jsonify({"hata": "Kullanıcı adı ve şifre zorunludur"}), 400
+        if not giris_bilgisi or not sifre:
+            return jsonify({"hata": "Bilgiler eksik"}), 400
 
+        # Veritabanında HEM email HEM DE kullanici_adi sütununda ara
         db = get_db()
         cursor = db.cursor()
-        cursor.execute('SELECT * FROM kullanicilar WHERE kullanici_adi = ? AND sifre = ?', (k_adi, sifre))
+        cursor.execute('''
+            SELECT * FROM kullanicilar 
+            WHERE (email = ? OR kullanici_adi = ?) AND sifre = ?
+        ''', (giris_bilgisi, giris_bilgisi, sifre))
+        
         kullanici = cursor.fetchone()
 
         if kullanici:
             return jsonify({"durum": "basarili", "mesaj": "Giriş onaylandı"}), 200
         else:
-            return jsonify({"hata": "Kullanıcı adı veya şifre hatalı!"}), 401
+            return jsonify({"hata": "Kullanıcı adı, e-posta veya şifre hatalı!"}), 401
 
     except Exception as e:
         return jsonify({"hata": f"Sunucu hatası: {str(e)}"}), 500
-
 
 # --- YENİ EKLENEN: KULLANICILARI LİSTELEME API'Sİ (Wix 2. Tablo İçin) ---
 @main_bp.route('/api/kullanicilar', methods=['GET'])
@@ -149,3 +154,7 @@ def kullanicilar_getir():
         return jsonify({"kullanicilar": kayitlar}), 200
     except Exception as e:
         return jsonify({"hata": f"Kullanıcı verileri okunamadı: {str(e)}"}), 500
+
+
+
+        
