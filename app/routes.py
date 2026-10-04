@@ -94,8 +94,9 @@ def leads_api():
     except Exception as e:
         return jsonify({"hata": f"Veritabanı/Sunucu hatası: {str(e)}"}), 500
 
+ 
 
-@app.route('/api/kullanici_ekle', methods=['POST'])
+@main_bp.route('/api/kullanici_ekle', methods=['POST'])
 def kullanici_ekle():
     try:
         data = request.json
@@ -106,13 +107,8 @@ def kullanici_ekle():
         if not k_adi or not sifre:
             return jsonify({"hata": "Kullanıcı adı ve şifre zorunludur"}), 400
 
-        # Mevcut app.db'ye bağlan ve kaydet
-        conn = sqlite3.connect('app.db')
-        c = conn.cursor()
-        c.execute("INSERT INTO kullanicilar (kullanici_adi, sifre, email) VALUES (?, ?, ?)", 
-                  (k_adi, sifre, email))
-        conn.commit()
-        conn.close()
+        # Mevcut app.db yapına uygun fonksiyonu kullanıyoruz
+        kullanici_ekle_db(k_adi, sifre, email)
 
         return jsonify({"mesaj": "Kullanıcı başarıyla kaydedildi!"}), 201
 
